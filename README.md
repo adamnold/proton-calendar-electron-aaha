@@ -1,6 +1,6 @@
 # proton-calendar-electron-aaha
 
-Unofficial Proton Calendar desktop wrapper for Linux by Adam And His Agents (AAHA). Application version **2.0.0** uses AAHA Electron template **3.0.0**, imported from immutable commit `f76f479eaed13dc769c52fd31ad1273fe6de6f26`.
+Proton Calendar (Electron Wrapped) by adamsagents.com. Application version **2.0.1** uses AAHA Electron template **3.0.0**, imported from immutable commit `f76f479eaed13dc769c52fd31ad1273fe6de6f26`.
 
 The repository, executable, desktop entry name and window title are `proton-calendar-electron-aaha`. The window loads Proton's live Calendar web application; the wrapper version and Proton's web application version advance independently. This project is unaffiliated with Proton.
 
