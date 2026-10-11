@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+if [[ $# -ne 2 ]]; then
+  echo "Usage: ./new-app.sh /absolute/destination /absolute/app-definition.json" >&2
+  exit 2
+fi
+DEST="$1"
+DEFINITION="$2"
+if [[ "$DEST" != /* || "$DEFINITION" != /* ]]; then
+  echo "ERROR: destination and definition must be absolute paths." >&2
+  exit 2
+fi
+if [[ -e "$DEST" ]]; then
+  echo "ERROR: destination already exists: $DEST" >&2
+  exit 1
+fi
+if [[ ! -f "$DEFINITION" ]]; then
+  echo "ERROR: definition file not found: $DEFINITION" >&2
+  exit 1
+fi
+mkdir -p "$DEST"
+cp -a .github LICENSE NOTICE README.md PRIVACY.md CONTRIBUTING.md CHANGELOG.md MIGRATION.md SIGNING.md HARDENING.md PROTON-HANDBACK.md DEPENDENCIES.md VALIDATION.md \
+  package.json package-lock.json app.config.js .node-version .npmrc .gitignore src scripts test templates \
+  build.sh install.sh uninstall.sh new-app.sh "$DEST/"
+# Calendar acceptance tests belong to this service, not generated applications.
+rm -f "$DEST/test/calendar.test.js" "$DEST/test/calendar-install.test.js"
+# Generated apps publish AppImages, not template archives.
+rm -f "$DEST/.github/workflows/release-template.yml"
+cp templates/app-release.yml "$DEST/.github/workflows/release.yml"
+node scripts/materialize-app.js "$DEST" "$DEFINITION"
+echo "Created $DEST. Add assets/icon-source.png, review policy, then run ./build.sh."

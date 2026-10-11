@@ -1,6 +1,14 @@
 # Changelog
 
-Last Updated: 2026-09-24
+Last Updated: 2026-10-11
+
+## v2.0.0 — 2026-10-11
+
+- Renamed repository, executable, product, desktop name and fixed window title to `proton-calendar-electron-aaha`; added profile-copy migration and hidden legacy desktop aliases.
+- Integrated AAHA template v3.0.0 at `f76f479eaed13dc769c52fd31ad1273fe6de6f26`. Pinned Electron 44.7.0, electron-builder 26.17.0, @electron/fuses 2.1.3, Node 24.21.0 and npm 11.19.0.
+- Restricted Calendar navigation, Proton Account authentication and permission requesters to explicit HTTPS origins. Removed top-level permission fallback and broad Proton sibling trust.
+- Added namespace-only launch enforcement, packaged fuses and authenticated AppImage extraction. Removed privileged sandbox-helper installation.
+- Added app-owned signing, build provenance and guarded manual release publication. Documented remaining upstream build dependency advisories and pending signed-in acceptance checks.
 
 ## Unreleased — 2026-09-24
 

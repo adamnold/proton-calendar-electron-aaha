@@ -1,4 +1,4 @@
-name: CI
+name: proton-calendar-electron-aaha validation
 on:
   push:
     branches: [master]
@@ -7,17 +7,16 @@ permissions:
   contents: read
 jobs:
   validate-app:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: 22
+          node-version: 24.21.0
           cache: npm
-      - run: sudo apt-get update && sudo apt-get install -y imagemagick
+      - run: sudo apt-get update && sudo apt-get install -y minisign imagemagick
       - run: npm ci
       - run: npm run check
       - run: npm test
-      - run: bash -n build.sh install.sh uninstall.sh scripts/generate-icons.sh
       - run: npm audit --audit-level=high
-      - run: ./build.sh
+      - run: bash build.sh
