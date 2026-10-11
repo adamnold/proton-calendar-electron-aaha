@@ -2,6 +2,10 @@
 
 Last Updated: 2026-10-11
 
+## v2.0.1 — 2026-10-11
+
+- Updated launcher, AppImage and package descriptions to `Proton Calendar (Electron Wrapped) by adamsagents.com`.
+
 ## v2.0.0 — 2026-10-11
 
 - Renamed repository, executable, product, desktop name and fixed window title to `proton-calendar-electron-aaha`; added profile-copy migration and hidden legacy desktop aliases.

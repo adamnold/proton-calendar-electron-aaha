@@ -1,7 +1,7 @@
 {
   "name": "proton-calendar-electron-aaha",
   "productName": "proton-calendar-electron-aaha",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "templateVersion": "3.0.0",
   "repository": {
     "type": "git",
@@ -12,7 +12,7 @@
     "npm": "11.19.0"
   },
   "packageManager": "npm@11.19.0",
-  "description": "Unofficial Proton Calendar Electron desktop application for Linux by Adam And His Agents",
+  "description": "Proton Calendar (Electron Wrapped) by adamsagents.com",
   "main": "src/main.js",
   "author": "Adam And His Agents (AAHA)",
   "license": "Apache-2.0",
@@ -59,7 +59,7 @@
       "desktop": {
         "entry": {
           "Name": "proton-calendar-electron-aaha",
-          "Comment": "Private calendar by Proton \u2014 unofficial AAHA wrapper",
+          "Comment": "Proton Calendar (Electron Wrapped) by adamsagents.com",
           "Categories": "Office;Calendar;",
           "Keywords": "calendar;events;proton;",
           "StartupWMClass": "com.adamandhisagents.protoncalendarelectronaaha",
