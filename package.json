@@ -82,6 +82,7 @@
         "libnotify",
         "nss",
         "libXScrnSaver",
+        "libX11-xcb",
         "libXtst",
         "xdg-utils",
         "at-spi2-core",
