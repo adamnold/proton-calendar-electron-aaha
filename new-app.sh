@@ -22,7 +22,7 @@ fi
 mkdir -p "$DEST"
 cp -a .github LICENSE NOTICE README.md PRIVACY.md CONTRIBUTING.md CHANGELOG.md MIGRATION.md SIGNING.md HARDENING.md PROTON-HANDBACK.md DEPENDENCIES.md VALIDATION.md \
   package.json package-lock.json app.config.js .node-version .npmrc .gitignore src scripts test templates \
-  build.sh install.sh uninstall.sh new-app.sh "$DEST/"
+  packaging build.sh install.sh uninstall.sh new-app.sh "$DEST/"
 # Calendar acceptance tests belong to this service, not generated applications.
 rm -f "$DEST/test/calendar.test.js" "$DEST/test/calendar-install.test.js"
 # Generated apps publish AppImages, not template archives.

@@ -10,3 +10,4 @@ npm-debug.log*
 .superpowers/
 *.key
 build/
+.flatpak-builder/

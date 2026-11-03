@@ -12,12 +12,13 @@ for arg in "$@"; do
   esac
 done
 command -v unshare >/dev/null && unshare -Ur true 2>/dev/null || fail "User namespaces are unavailable. Ask your administrator to permit sandboxed applications; this wrapper will not run unsandboxed."
-SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd -P)"
-NATIVE="$SCRIPT_DIR/$(basename -- "$0").bin"
+SCRIPT_PATH="$(readlink -f -- "$0")"
+SCRIPT_DIR="$(dirname -- "$SCRIPT_PATH")"
+NATIVE="$SCRIPT_PATH.bin"
 if [[ -f "$NATIVE" && ! -L "$NATIVE" && -x "$NATIVE" ]]; then
   exec "$NATIVE" --disable-setuid-sandbox "$@"
 fi
-if [[ "$(basename -- "$0")" == launch.sh && -x "$SCRIPT_DIR/../node_modules/.bin/electron" ]]; then
+if [[ "$(basename -- "$SCRIPT_PATH")" == launch.sh && -x "$SCRIPT_DIR/../node_modules/.bin/electron" ]]; then
   cd "$SCRIPT_DIR/.."
   exec node_modules/.bin/electron --disable-setuid-sandbox . "$@"
 fi

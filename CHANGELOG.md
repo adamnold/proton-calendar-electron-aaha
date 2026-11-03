@@ -1,6 +1,15 @@
 # Changelog
 
-Last Updated: 2026-10-11
+Last Updated: 2026-11-03
+
+## v2.1.0 — 2026-11-03
+
+- Added x86_64 RPM downloads for Fedora KDE and Flatpak bundles for other Linux distributions alongside AppImage. RPM and Flatpak need no source checkout, Node.js, npm or project installer. Updates remain manual; no package repository, application update remote or Flathub submission is provided.
+- Added RPM desktop/CLI integration under `/opt` and a Flatpak build using Freedesktop Platform/SDK and Electron2.BaseApp 26.08. Flatpak uses Zypak, portals and a separate profile with fresh sign-in; native formats retain their user-namespace sandbox policy and shared profile.
+- Preserved the AppImage `SHA256SUMS` contract and added separately signed `SHA256SUMS.packages` for RPM, Flatpak and shared build metadata. Release authentication uses Minisign; embedded OpenPGP package signatures are intentionally absent.
+- Documented manual updates/removal and retirement of per-user desktop integration before switching to RPM. RPM hooks do not migrate user homes. Existing signed-in and KDE Wayland acceptance gaps remain pending; see VALIDATION.md for recorded evidence.
+- Updated Electron to 44.10.1 and compatible Undici lock entries to 6.29.1/7.30.1 after owner-approved security updates; the audit has no high/critical findings. Kept build Node 24.21.0, npm 11.19.0, electron-builder 26.17.0 and @electron/fuses 2.1.3 unchanged.
+- Normalized packaged filesystem permissions before root-owned RPM installation, preserving executable files while removing shared write and special bits.
 
 ## v2.0.1 — 2026-10-11
 

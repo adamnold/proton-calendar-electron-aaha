@@ -1,7 +1,7 @@
 {
   "name": "proton-calendar-electron-aaha",
   "productName": "proton-calendar-electron-aaha",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "templateVersion": "3.0.0",
   "repository": {
     "type": "git",
@@ -26,9 +26,9 @@
     "dist": "electron-builder --linux --publish never"
   },
   "devDependencies": {
-    "electron": "44.7.0",
-    "electron-builder": "26.17.0",
-    "@electron/fuses": "2.1.3"
+    "@electron/fuses": "2.1.3",
+    "electron": "44.10.1",
+    "electron-builder": "26.17.0"
   },
   "build": {
     "appId": "com.adamandhisagents.protoncalendarelectronaaha",
@@ -49,12 +49,13 @@
     "linux": {
       "target": [
         "dir",
-        "AppImage"
+        "AppImage",
+        "rpm"
       ],
       "category": "Office",
       "icon": "build/icons",
       "executableName": "proton-calendar-electron-aaha",
-      "artifactName": "proton-calendar-electron-aaha-v${version}-${arch}.AppImage",
+      "artifactName": "proton-calendar-electron-aaha-v${version}-x86_64.${ext}",
       "syncDesktopName": true,
       "desktop": {
         "entry": {
@@ -67,7 +68,35 @@
           "Type": "Application"
         }
       }
-    }
+    },
+    "rpm": {
+      "maintainer": "Adam And His Agents (AAHA)",
+      "afterInstall": "packaging/rpm-after-install.sh",
+      "afterRemove": "packaging/rpm-after-remove.sh",
+      "fpm": [
+        "--rpm-digest",
+        "sha256"
+      ],
+      "depends": [
+        "gtk3",
+        "libnotify",
+        "nss",
+        "libXScrnSaver",
+        "libXtst",
+        "xdg-utils",
+        "at-spi2-core",
+        "libuuid",
+        "bash",
+        "coreutils",
+        "util-linux",
+        "alsa-lib",
+        "cups-libs",
+        "mesa-libgbm",
+        "libxkbcommon",
+        "libsecret"
+      ]
+    },
+    "publish": null
   },
   "desktopName": "com.adamandhisagents.protoncalendarelectronaaha.desktop"
 }

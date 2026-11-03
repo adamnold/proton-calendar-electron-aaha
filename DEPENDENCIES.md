@@ -1,4 +1,12 @@
-# Calendar dependency validation — 2026-10-11
+# Calendar dependency validation — 2026-11-03
+
+For v2.1.0, the owner approved a minimal security refresh after the release audit found new high-severity advisories. Electron is now pinned to **44.10.1**, with observed Chromium **152.0.7977.169** and bundled Node **24.22.1**. Build Node **24.21.0**, npm **11.19.0**, electron-builder **26.17.0** and @electron/fuses **2.1.3** remain unchanged. Compatible lockfile-only updates select Undici **6.29.1** under node-gyp and **7.30.1** under @electron/get; no overrides or major dependency upgrades were added.
+
+The refreshed `npm audit --audit-level=high` passes with **0 high/critical and 16 moderate affected-package entries**. Electron's [compromised-certificate mitigation](https://github.com/advisories/GHSA-jr5w-w6x2-84p9) matters to the shipped application because it loads Calendar over Chromium HTTPS; origin restrictions and renderer isolation do not replace TLS server authentication. The patched runtime includes the upstream mitigation. Undici is build/download tooling rather than an application npm runtime dependency. Its compatible updates include the [TLS options fix](https://github.com/advisories/GHSA-2m5v-pch6-74hx) and [excessive content-encoding fix](https://github.com/advisories/GHSA-xjj6-f33q-929c). Individual vulnerable downloader paths were not exploited locally; patched versions and the audit are the verification substitute, followed by package smoke checks.
+
+Remaining moderate entries concern fast-uri and minimatch and their build-tool dependants. They remain documented limitations; the high-severity release gate was retained. The runtime/SDK/base used for Flatpak is 26.08 and its actual commits are recorded in BUILDINFO.json. Package staging strips group/other write and special permission bits from the upstream Electron archive before making root-owned RPM files.
+
+## Historical validation — 2026-10-11
 
 Pinned build environment: Node 24.21.0 / npm 11.19.0. Electron 44.7.0 embeds Chromium 152.0.7977.130 and Node 24.21.0, observed from the downloaded runtime. electron-builder 26.17.0 and @electron/fuses 2.1.3 are exact development pins. Lockfiles are committed and ordinary builds use `npm ci`.
 

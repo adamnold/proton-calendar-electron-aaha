@@ -2,6 +2,16 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { flipFuses, FuseVersion, FuseV1Options } = require("@electron/fuses");
+async function normalizePackageModes(directory) {
+  await fs.chmod(directory, 0o755);
+  for (const name of await fs.readdir(directory)) {
+    const filename = path.join(directory, name);
+    const info = await fs.lstat(filename);
+    if (info.isDirectory()) await normalizePackageModes(filename);
+    else if (info.isFile()) await fs.chmod(filename, info.mode & 0o111 ? 0o755 : 0o644);
+    else if (!info.isSymbolicLink()) throw new Error("Unexpected special file in package payload.");
+  }
+}
 module.exports = async function afterPack(context) {
   if (context.electronPlatformName !== "linux") throw new Error("This template packages Linux applications only.");
   const name = context.packager.config.linux.executableName;
@@ -26,4 +36,8 @@ module.exports = async function afterPack(context) {
   }
   // rm unlinks a helper symlink rather than following its target.
   await fs.rm(path.join(context.appOutDir, "chrome-sandbox"), { force: true });
+  // Upstream archives can contain 0666/0777 files. These become root-owned
+  // files in RPM, so preserve executable intent but strip shared write/special bits.
+  await normalizePackageModes(context.appOutDir);
 };
+module.exports.normalizePackageModes = normalizePackageModes;

@@ -42,6 +42,18 @@ test("namespace failure stops before the native executable runs", t => {
   assert.notEqual(r.status, 0); assert.equal(r.stdout, ""); assert.match(r.stderr, /namespace/i);
 });
 
+test("launcher resolves an installed CLI symlink before finding its native executable", t => {
+  const f = fixture(t);
+  fs.chmodSync(f.launcher, 0o755);
+  const link = path.join(f.bin, "calendar-cli");
+  fs.symlinkSync(f.launcher, link);
+  const result = spawnSync(link, ["https://example.com/calendar"], {
+    encoding: "utf8", env: { ...process.env, PATH: `${f.bin}:${process.env.PATH}` }
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, "--disable-setuid-sandbox\nhttps://example.com/calendar\n");
+});
+
 test("root execution fails before native code",t => {
   const f=fixture(t);const bin=path.join(f.root,"bin");fs.mkdirSync(bin, { recursive: true });
   fs.writeFileSync(path.join(bin,"id"),"#!/bin/sh\necho 0\n");fs.chmodSync(path.join(bin,"id"),0o755);

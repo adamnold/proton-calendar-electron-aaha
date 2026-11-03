@@ -8,13 +8,15 @@ const sourceRoot = path.resolve(__dirname, "../..");
 const config = require("../../app.config.js");
 function createFixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), `${config.repoName}-installer-`));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const repo = path.join(root, "repo");
   const home = path.join(root, "home");
   const stateHome = path.join(home, ".local", "state");
   fs.cpSync(sourceRoot, repo, {
     recursive: true,
     filter(source) {
-      return ![".git", "node_modules", "dist", ".superpowers"].includes(path.basename(source));
+      const topLevel = path.relative(sourceRoot, source).split(path.sep)[0];
+      return ![".git", "node_modules", "dist", "build", "out", ".flatpak-builder", ".superpowers"].includes(topLevel);
     }
   });
   const unpacked = path.join(repo, "dist", "linux-unpacked");
@@ -44,7 +46,6 @@ for size in 16 24 32 48 64 96 128 256 512; do printf icon > squashfs-root/aaha-i
   const digest = crypto.createHash("sha256").update(fs.readFileSync(appImage)).digest("hex");
   fs.writeFileSync(path.join(repo, "dist", "SHA256SUMS"), `${digest}  ${appImageName}\n`);
   fs.mkdirSync(home, { recursive: true });
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const bin = path.join(root, "bin"); fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, "sudo"), "#!/bin/sh\necho forbidden-privilege >&2\nexit 97\n");
   fs.chmodSync(path.join(bin, "sudo"), 0o755);

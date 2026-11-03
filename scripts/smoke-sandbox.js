@@ -1,15 +1,22 @@
 "use strict";
-// Run only against a disposable generated fixture, never a real service/profile.
+// Run native modes against disposable generated fixtures. Flatpak mode requires
+// a disposable HOME mount, since Flatpak rewrites its own profile directories.
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { spawn } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const [mode, target] = process.argv.slice(2);
-if (!["development","installed","appimage"].includes(mode) || !target) throw Error("Usage: node scripts/smoke-sandbox.js development|installed|appimage /absolute/fixture-path");
+if (!["development","installed","appimage","flatpak"].includes(mode) || !target) throw Error("Usage: node scripts/smoke-sandbox.js development|installed|appimage /absolute/fixture-path OR flatpak application.id");
+if (mode === "flatpak" && !fs.existsSync(path.join(os.homedir(), ".aaha-disposable-test-home"))) throw Error("Flatpak smoke requires an isolated disposable HOME mount.");
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "aaha-live-sandbox-"));
 const net = require("node:net");
 let port;
-let child; let logs="";
+let child; let logs=""; let instance="";
+function enter(args) {
+  const result=spawnSync("flatpak",["enter",instance.trim(),...args],{encoding:"utf8"});
+  if(result.status!==0)throw Error(`Cannot inspect Flatpak instance: ${result.stderr}`);
+  return result.stdout;
+}
 function delay(ms) { return new Promise(resolve => setTimeout(resolve,ms)); }
 async function rpc(url,method) {
   return new Promise((resolve,reject) => {
@@ -25,9 +32,11 @@ async function main(){
   port=reservation.address().port;
   await new Promise(resolve=>reservation.close(resolve));
   const args=[`--remote-debugging-port=${port}`];
-  const command=mode==="development"?"bash":target;
-  const launchArgs=mode==="development"?[path.join(target,"scripts/launch.sh"),...args]:args;
-  child=spawn(command,launchArgs,{env:{...process.env,AAHA_HOME:home,XDG_CONFIG_HOME:path.join(home,"config"),XDG_CACHE_HOME:path.join(home,"cache"),APPIMAGE_EXTRACT_AND_RUN:mode==="appimage"?"1":"",electron_config_cache:process.env.electron_config_cache},detached:true,stdio:["ignore","pipe","pipe"]});
+  const command=mode==="flatpak"?"flatpak":mode==="development"?"bash":target;
+  const launchArgs=mode==="flatpak"?["run","--user","--instance-id-fd=3",target,...args]:mode==="development"?[path.join(target,"scripts/launch.sh"),...args]:args;
+  const env=mode==="flatpak"?process.env:{...process.env,AAHA_HOME:home,XDG_CONFIG_HOME:path.join(home,"config"),XDG_CACHE_HOME:path.join(home,"cache"),APPIMAGE_EXTRACT_AND_RUN:mode==="appimage"?"1":"",electron_config_cache:process.env.electron_config_cache};
+  child=spawn(command,launchArgs,{env,detached:true,stdio:["ignore","pipe","pipe", "pipe"]});
+  if(mode==="flatpak")child.stdio[3].on("data",b=>instance+=b);
   child.stdout.on("data",b=>logs+=b);child.stderr.on("data",b=>logs+=b);
   let endpoint;
   for(let i=0;i<100;i++){
@@ -39,6 +48,12 @@ async function main(){
   const info=await rpc(endpoint.webSocketDebuggerUrl,"SystemInfo.getProcessInfo");
   const browser=info.processInfo.find(p=>p.type==="browser");
   let parent=browser?.id;let owned=false;
+  if(mode==="flatpak"){
+    if(!/^[0-9]+\s*$/.test(instance))throw Error("Missing Flatpak instance identity");
+    const identity=enter(["cat","/.flatpak-info"]);
+    if(!identity.split("\n").includes(`name=${target}`))throw Error("Unexpected Flatpak instance application");
+    owned=true;parent=0;
+  }
   for(let i=0;parent && i<20;i++){
     if(parent===child.pid){owned=true;break;}
     const status=fs.readFileSync(`/proc/${parent}/status`,"utf8");
@@ -46,7 +61,7 @@ async function main(){
   }
   if(!owned)throw Error("CDP endpoint does not belong to this fixture launch");
   function fields(pid) {
-    const status=fs.readFileSync(`/proc/${pid}/status`,"utf8");
+    const status=mode==="flatpak"?enter(["cat",`/proc/${pid}/status`]):fs.readFileSync(`/proc/${pid}/status`,"utf8");
     return Object.fromEntries(status.split("\n").filter(l=>/^(NSpid|Seccomp|Seccomp_filters|NoNewPrivs|Uid):/.test(l)).map(l=>{const [k,v]=l.split(":");return[k,v.trim()];}));
   }
   const baseline=fields(browser.id);
@@ -57,10 +72,11 @@ async function main(){
     if(entries.Seccomp!=="2" || entries.NoNewPrivs!=="1" || entries.NSpid.split(/\s+/).length<=baseline.NSpid.split(/\s+/).length || Number(entries.Seccomp_filters)<=Number(baseline.Seccomp_filters))throw Error(`Ineffective renderer sandbox relative to browser: ${JSON.stringify({baseline,entries})}`);
     evidence.push({pid:renderer.id,...entries});
   }
-  console.log(JSON.stringify({mode,result:"PASS",browserBaseline:baseline,rendererEvidence:evidence}));
+  console.log(JSON.stringify({mode,result:"PASS",instance:instance.trim()||undefined,browserBaseline:baseline,rendererEvidence:evidence}));
 }
 main().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(async()=>{
   if(child){
+    if(mode==="flatpak")spawnSync("flatpak",["kill","--user",target],{stdio:"ignore"});
     try { process.kill(-child.pid,"SIGTERM"); } catch(error) { if(error.code!=="ESRCH")throw error; }
     await delay(500);
     try { process.kill(-child.pid,"SIGKILL"); } catch(error) { if(error.code!=="ESRCH")throw error; }
