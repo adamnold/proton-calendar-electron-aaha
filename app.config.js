@@ -5,7 +5,7 @@ module.exports = {
   "configured": true,
   "repoName": "proton-calendar-electron-aaha",
   "productName": "proton-calendar-electron-aaha",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Proton Calendar (Electron Wrapped) by adamsagents.com",
   "repository": "https://github.com/adamnold/proton-calendar-electron-aaha.git",
   "appId": "com.adamandhisagents.protoncalendarelectronaaha",

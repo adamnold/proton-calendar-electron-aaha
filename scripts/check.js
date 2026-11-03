@@ -9,5 +9,5 @@ for (const directory of ["src", "scripts", "test"]) {
   for (const name of fs.readdirSync(directory).filter(n => n.endsWith(".js"))) check(process.execPath, ["--check", `${directory}/${name}`]);
 }
 check(process.execPath, ["--check", "app.config.js"]);
-for (const file of ["build.sh", "install.sh", "uninstall.sh", "new-app.sh", ...fs.readdirSync("scripts").filter(n => n.endsWith(".sh")).map(n => `scripts/${n}`)]) check("bash", ["-n", file]);
+for (const file of ["build.sh", "install.sh", "uninstall.sh", "new-app.sh", ...fs.readdirSync("scripts").filter(n => n.endsWith(".sh")).map(n => `scripts/${n}`), ...fs.readdirSync("packaging").filter(n => n.endsWith(".sh")).map(n => `packaging/${n}`)]) check("bash", ["-n", file]);
 check(process.execPath, ["scripts/validate-config.js", ...process.argv.slice(2)]);

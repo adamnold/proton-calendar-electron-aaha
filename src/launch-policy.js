@@ -3,7 +3,7 @@ const unsafe = new Set(["--no-sandbox", "--disable-sandbox", "--disable-namespac
 function launchErrors(argv = process.argv, env = process.env, uid = process.getuid?.()) {
   const errors = [];
   if (uid === 0) errors.push("Run this per-user application without root privileges.");
-  for (const key of ["ELECTRON_DISABLE_SANDBOX", "ELECTRON_RUN_AS_NODE"]) {
+  for (const key of ["ELECTRON_DISABLE_SANDBOX", "ELECTRON_RUN_AS_NODE", "ZYPAK_DISABLE_SANDBOX"]) {
     if (Object.hasOwn(env, key)) errors.push(`Remove ${key}; effective sandboxing is required.`);
   }
   for (const arg of argv) {

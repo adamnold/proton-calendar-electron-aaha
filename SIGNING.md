@@ -2,6 +2,38 @@
 
 Calendar owns the `release.pub` committed in this repository. Obtain its public key through an independent trusted channel; a key bundled beside a downloaded artifact cannot establish trust by itself. Template signatures do not authorize Calendar releases.
 
+## Authenticate a downloaded release
+
+RPM and Flatpak intentionally have no embedded OpenPGP package signatures. Minisign authenticates the release checksum manifests; native package-signature checks are a separate mechanism. Download the appropriate manifest, its signature and shared `BUILDINFO.json` from the same release as the package.
+
+For RPM or Flatpak, put your **chosen package**, `BUILDINFO.json`, `SHA256SUMS.packages` and `SHA256SUMS.packages.minisig` in a clean directory, then run:
+
+```sh
+minisign -Vm SHA256SUMS.packages -p /independently/trusted/app-release.pub
+sha256sum --ignore-missing -c SHA256SUMS.packages
+```
+
+`SHA256SUMS.packages` covers exactly the RPM, Flatpak and shared `BUILDINFO.json`. Require both your chosen package and `BUILDINFO.json` to show `OK`; an absent chosen package is not a successful verification. `--ignore-missing` skips the unchosen format, while the signed manifest authenticates the supplied files. Signature verification must succeed before trusting the checksums. Install your chosen format with the command in README.md. Neither Node.js nor the project checkout is needed for this verification or package installation.
+
+The AppImage manifest remains separate and covers exactly the AppImage and `BUILDINFO.json`. Download those files with `SHA256SUMS` and `SHA256SUMS.minisig`, then run:
+
+```sh
+minisign -Vm SHA256SUMS -p /independently/trusted/app-release.pub
+sha256sum -c SHA256SUMS
+```
+
+For optional AppImage desktop integration, place these four files in a clean `dist/` beside the matching source/configuration, install the documented build-time Node, and run:
+
+```sh
+bash install.sh --public-key /independently/trusted/app-release.pub
+```
+
+The installer authenticates before extraction, stages and reverifies the copied payload, then installs from that verified image. Missing signatures, a wrong key, altered metadata, changed artifacts or ambiguous artifact selection fail. `--local-build` explicitly permits unsigned developer builds and still verifies checksums.
+
+Updates are manual: download and authenticate each new release, quit the app, install the new package as described in README.md, then restart. There is no background updater, DNF repository or Flatpak application update remote. The Flatpak bundle embeds `https://dl.flathub.org/repo/flathub.flatpakrepo` to acquire runtime dependencies, not to update this application. Ordinary uninstall preserves the profile. App owners must announce and deliver updates to existing users.
+
+## Release signing and provenance
+
 For this noninteractive CI workflow, explicitly generate an **unencrypted** app-specific Minisign key with `-G -W`. Ordinary `minisign -G` creates a password-protected key and cannot be used with this workflow, which has no passphrase channel. Keep the private file outside Git in an owner-only directory (0700, private file 0600); the protected GitHub environment stores the CI secret encrypted. Commit only the public key.
 
 ```sh
@@ -14,20 +46,19 @@ chmod 644 release.pub
 
 Unsigned local builds may record Minisign as unavailable in metadata; signed releases require it. Store the private key as the `MINISIGN_SECRET_KEY` secret in the protected GitHub `release` environment; restrict deployments and require a trusted reviewer. Do not store keys in app definitions, source archives or release artifacts.
 
-Manual workflow dispatch takes an existing immutable `v<package-version>` tag and an empty draft release. It resolves the tag to a full commit SHA, checks tag/package/checkout agreement, validates and builds with publication disabled, signs `SHA256SUMS`, verifies the signature, and refuses replacement of published releases or existing draft assets. It rechecks the tag before publishing. Repository administrators must preserve release tags; workflow checks cannot prevent an administrator from changing history later.
+Manual workflow dispatch takes an existing immutable `v<package-version>` tag and an empty draft release. It resolves the tag to a full commit SHA, checks tag/package/checkout agreement, validates and builds all three formats from that checkout in one job with publication disabled, signs both checksum manifests, verifies the complete expected artifact set, and refuses replacement of published releases or existing draft assets. It rechecks the tag before publishing. Repository administrators must preserve release tags; workflow checks cannot prevent an administrator from changing history later.
 
-App release manifests cover exactly one AppImage and `BUILDINFO.json`; template manifests cover the source archive and metadata. Metadata records repository, full source commit, tag, wrapper and template versions, Electron/Chromium/bundled Node, architecture, build tool versions, runner details and lockfile digest. Runner images, packaging tools and timestamps can vary; these are repeatable builds, not a claim of bit-for-bit reproduction.
+The v2.1.0 app release has exactly eight uploaded assets:
 
-For a downloaded app release, place its AppImage, `BUILDINFO.json`, `SHA256SUMS` and `SHA256SUMS.minisig` in a clean `dist/` beside the matching app source/configuration. Install Minisign and the documented build-time Node. Run:
+- `proton-calendar-electron-aaha-v2.1.0-x86_64.rpm`
+- `proton-calendar-electron-aaha-v2.1.0-x86_64.flatpak`
+- `proton-calendar-electron-aaha-v2.1.0-x86_64.AppImage`
+- `BUILDINFO.json`
+- `SHA256SUMS`
+- `SHA256SUMS.minisig`
+- `SHA256SUMS.packages`
+- `SHA256SUMS.packages.minisig`
 
-```sh
-minisign -Vm dist/SHA256SUMS -p /independently/trusted/app-release.pub
-(cd dist && sha256sum -c SHA256SUMS)
-bash install.sh --public-key /independently/trusted/app-release.pub
-```
+The two manifests reference the same metadata file. Template manifests continue to cover the source archive and metadata. Metadata records repository, full source commit, tag, wrapper and template versions, Electron/Chromium/bundled Node, architecture, build tool versions (including RPM and Flatpak tooling/runtime/base), runner details and lockfile digest. Runner images, packaging tools and timestamps can vary; these are repeatable builds, not a claim of bit-for-bit reproduction.
 
-The installer authenticates before extraction, stages and reverifies the copied payload, then installs from that verified image. Missing signatures, a wrong key, altered metadata, changed artifacts or ambiguous artifact selection fail. `--local-build` permits unsigned developer builds explicitly and still verifies checksums.
-
-To update, repeat verification and installation for the new signed version, then restart. Ordinary uninstall preserves the profile. App owners must announce and deliver updates to existing users; no background updater is included.
-
-The Calendar `release` environment restricts deployments to `master` and `v*` tags and requires review by the repository owner. The app's private key is stored outside Git in an owner-only directory and as the environment secret. Key rotation requires a separately authenticated announcement; replacing the bundled public key alone does not establish trust.
+The Calendar `release` environment restricts deployments to `master` and `v*` tags and requires review by the repository owner. The app's private key is stored outside Git and in the protected GitHub release environment. Key rotation requires a separately authenticated announcement; replacing the bundled public key alone does not establish trust.

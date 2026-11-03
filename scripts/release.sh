@@ -36,12 +36,23 @@ unset MINISIGN_SECRET_KEY
 minisign -Sm dist/SHA256SUMS -s "$key" -t "$GITHUB_REPOSITORY $TAG $SHA" </dev/null
 minisign -Vm dist/SHA256SUMS -p release.pub
 (cd dist && sha256sum -c SHA256SUMS)
+if [[ "$1" == app ]]; then
+  minisign -Sm dist/SHA256SUMS.packages -s "$key" -t "$GITHUB_REPOSITORY $TAG $SHA" </dev/null
+  minisign -Vm dist/SHA256SUMS.packages -p release.pub
+  (cd dist && sha256sum -c SHA256SUMS.packages)
+fi
 # Recheck immutable identity immediately before publication; never --clobber.
 [[ "$SHA" == "$(gh api "repos/$GITHUB_REPOSITORY/commits/$TAG" --jq .sha)" ]] || { echo 'Release tag changed' >&2; exit 1; }
 if [[ "$1" == app ]]; then
   artifact="$(node scripts/verify-artifacts.js dist --public-key "$PWD/release.pub")"
 fi
 artifacts=("dist/$artifact" dist/BUILDINFO.json dist/SHA256SUMS dist/SHA256SUMS.minisig)
+if [[ "$1" == app ]]; then
+  package_listing="$(node scripts/verify-packages.js dist --public-key "$PWD/release.pub")"
+  mapfile -t packages <<< "$package_listing"
+  for package in "${packages[@]}"; do artifacts+=("dist/$package"); done
+  artifacts+=(dist/SHA256SUMS.packages dist/SHA256SUMS.packages.minisig)
+fi
 gh release upload "$TAG" "${artifacts[@]}" --repo "$GITHUB_REPOSITORY"
 if [[ "${PRERELEASE:-false}" == true ]]; then
   gh release edit "$TAG" --draft=false --prerelease --repo "$GITHUB_REPOSITORY"

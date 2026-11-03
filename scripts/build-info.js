@@ -47,6 +47,18 @@ async function main() {
     const tools = await require("app-builder-lib/out/toolsets/linux.js").getAppImageTools(toolset, require("builder-util").Arch[process.arch === "arm" ? "armv7l" : process.arch]);
     info.tools.appImage = { toolset, mksquashfs: command(tools.mksquashfs, ["-version"]).split("\n")[0], mksquashfsSha256: digest(tools.mksquashfs), runtimeSha256: digest(tools.runtime) };
   }
+  if (fs.readdirSync(directory).some(n => n.endsWith(".rpm"))) {
+    const fpm = await require("app-builder-lib/out/toolsets/linux.js").getFpmPath();
+    info.tools.rpm = { rpm: command("rpm", ["--version"]), rpmbuild: command("rpmbuild", ["--version"]), fpm: command(fpm, ["--version"]), fpmSha256: digest(fpm) };
+  }
+  if (fs.readdirSync(directory).some(n => n.endsWith(".flatpak"))) {
+    const { RUNTIME_VERSION } = require("./prepare-flatpak.js");
+    const ref = name => `${name}/x86_64/${RUNTIME_VERSION}`;
+    info.tools.flatpak = { flatpak: command("flatpak", ["--version"]), builder: command("flatpak-builder", ["--version"]),
+      runtime: { ref: ref("org.freedesktop.Platform"), commit: command("flatpak", ["info", "--user", "--show-commit", ref("org.freedesktop.Platform")]) },
+      sdk: { ref: ref("org.freedesktop.Sdk"), commit: command("flatpak", ["info", "--user", "--show-commit", ref("org.freedesktop.Sdk")]) },
+      base: { ref: ref("org.electronjs.Electron2.BaseApp"), commit: command("flatpak", ["info", "--user", "--show-commit", ref("org.electronjs.Electron2.BaseApp")]) } };
+  }
   fs.writeFileSync(path.join(directory, "BUILDINFO.json"), JSON.stringify(info, null, 2) + "\n");
 }
 if (require.main === module) main().catch(error => { console.error(error.message); process.exitCode = 1; });

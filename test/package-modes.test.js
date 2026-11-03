@@ -1,0 +1,24 @@
+"use strict";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs/promises");
+const os = require("node:os");
+const path = require("node:path");
+test("packaging removes shared write and special bits without following links outside the payload", async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "aaha-package-modes-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const payload = path.join(root, "payload");
+  await fs.mkdir(payload, { mode: 0o777 });
+  await fs.writeFile(path.join(payload, "native"), "inert executable");
+  await fs.chmod(path.join(payload, "native"), 0o6777);
+  await fs.writeFile(path.join(payload, "resource"), "inert resource");
+  await fs.chmod(path.join(payload, "resource"), 0o666);
+  const outside = path.join(root, "outside");
+  await fs.writeFile(outside, "unrelated"); await fs.chmod(outside, 0o666);
+  await fs.symlink(outside, path.join(payload, "link"));
+  await require("../scripts/after-pack.js").normalizePackageModes(payload);
+  assert.equal((await fs.stat(payload)).mode & 0o7777, 0o755);
+  assert.equal((await fs.stat(path.join(payload, "native"))).mode & 0o7777, 0o755);
+  assert.equal((await fs.stat(path.join(payload, "resource"))).mode & 0o7777, 0o644);
+  assert.equal((await fs.stat(outside)).mode & 0o7777, 0o666);
+});
